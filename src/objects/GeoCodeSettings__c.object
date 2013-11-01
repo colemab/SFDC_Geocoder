@@ -1,3 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"/>
-
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>List</customSettingsType>
+    <customSettingsVisibility>Protected</customSettingsVisibility>
+    <description>General Application Settings are stored here</description>
+    <enableFeeds>false</enableFeeds>
+    <fields>
+        <fullName>BatchSize__c</fullName>
+        <defaultValue>10</defaultValue>
+        <deprecated>false</deprecated>
+        <description>This is the number of records the BatchGeocodeAccounts class will query for on each instance.  Please note that this is NOT the chunk/batch size!</description>
+        <externalId>false</externalId>
+        <label>BatchSize_Accounts</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>0</scale>
+        <type>Number</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>BingMapsKey__c</fullName>
+        <deprecated>false</deprecated>
+        <description>This is the API key used to authenticate against Bing Maps</description>
+        <externalId>false</externalId>
+        <label>BingMapsKey</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>GeoCodeServiceNames__c</fullName>
+        <defaultValue>&quot;Bing,Google,MapQuest&quot;</defaultValue>
+        <deprecated>false</deprecated>
+        <description>This custom setting is used to decouple the GeoCoder class from the implementation classes.
+This is a comma delimited list of GeoCoding service implementations.</description>
+        <externalId>false</externalId>
+        <label>GeoCodeServiceNames</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>MapQuestKey__c</fullName>
+        <deprecated>false</deprecated>
+        <description>This is the key used to authenticate against MapQuest API</description>
+        <externalId>false</externalId>
+        <label>MapQuestKey</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>MaxLogSize__c</fullName>
+        <defaultValue>25</defaultValue>
+        <deprecated>false</deprecated>
+        <description>This is the number of records to keep in the log object.</description>
+        <externalId>false</externalId>
+        <label>MaxLogSize</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>0</scale>
+        <type>Number</type>
+        <unique>false</unique>
+    </fields>
+    <label>GeoCodeSettings</label>
+</CustomObject>
