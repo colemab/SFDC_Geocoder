@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StaticResource xmlns="http://soap.sforce.com/2006/04/metadata">
+    <cacheControl>Private</cacheControl>
+    <contentType>application/zip</contentType>
+    <description>02/14/14 TC - This will contain the customized (CSS, Images, JS, etc) resources for the Geocoder application.</description>
+</StaticResource>

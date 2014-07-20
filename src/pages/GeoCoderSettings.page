@@ -1,4 +1,4 @@
-<apex:page controller="VF_GeoCoderSettings" >
+<apex:page controller="VF_GeoCoderSettings" title="Settings">
 
 	<apex:includeScript value="{!$Resource.jquery}"/>
 	<apex:includeScript value="{!$Resource.jqueryblockUI}"/>	
@@ -6,113 +6,7 @@
 	<apex:includeScript value="{!URLFOR($Resource.jqueryUI, 'jqueryui.js')}"/>
 	<apex:stylesheet value="{!URLFOR($Resource.jqueryUI, 'start-jquery-ui.css')}"/>
 	
-	<style>
-		.SettingsTableCSS {
-			margin:0px;padding:0px;
-			width:80%;
-			box-shadow: 10px 10px 5px #888888;
-			border:1px solid #000000;
-			
-			-moz-border-radius-bottomleft:11px;
-			-webkit-border-bottom-left-radius:11px;
-			border-bottom-left-radius:11px;
-			
-			-moz-border-radius-bottomright:11px;
-			-webkit-border-bottom-right-radius:11px;
-			border-bottom-right-radius:11px;
-			
-			-moz-border-radius-topright:11px;
-			-webkit-border-top-right-radius:11px;
-			border-top-right-radius:11px;
-			
-			-moz-border-radius-topleft:11px;
-			-webkit-border-top-left-radius:11px;
-			border-top-left-radius:11px;
-		}.SettingsTableCSS table{
-			width:100%;
-			height:100%;
-			margin:0px;padding:0px;
-		}.SettingsTableCSS tr:last-child td:last-child {
-			-moz-border-radius-bottomright:11px;
-			-webkit-border-bottom-right-radius:11px;
-			border-bottom-right-radius:11px;
-		}
-		.SettingsTableCSS table tr:first-child td:first-child {
-			-moz-border-radius-topleft:11px;
-			-webkit-border-top-left-radius:11px;
-			border-top-left-radius:11px;
-		}
-		.SettingsTableCSS table tr:first-child td:last-child {
-			-moz-border-radius-topright:11px;
-			-webkit-border-top-right-radius:11px;
-			border-top-right-radius:11px;
-		}.SettingsTableCSS tr:last-child td:first-child{
-			-moz-border-radius-bottomleft:11px;
-			-webkit-border-bottom-left-radius:11px;
-			border-bottom-left-radius:11px;
-		}.SettingsTableCSS tr:hover td{
-			background-color:#ffffaa;
-				
-		
-		}
-		.SettingsTableCSS td{
-			vertical-align:middle;
-			
-			background-color:#aad4ff;
-		
-			border:1px solid #000000;
-			border-width:0px 1px 1px 0px;
-			text-align:left;
-			padding:9px;
-			font-size:14px;
-			font-family:Georgia;
-			font-weight:normal;
-			color:#000000;
-		}.SettingsTableCSS tr:last-child td{
-			border-width:0px 1px 0px 0px;
-		}.SettingsTableCSS tr td:last-child{
-			border-width:0px 0px 1px 0px;
-		}.SettingsTableCSS tr:last-child td:last-child{
-			border-width:0px 0px 0px 0px;
-		}
-		.SettingsTableCSS tr:first-child td{
-			background:-o-linear-gradient(bottom, #006ddb 5%, #001f3f 100%);	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #006ddb), color-stop(1, #001f3f) );
-			background:-moz-linear-gradient( center top, #006ddb 5%, #001f3f 100% );
-			filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#006ddb", endColorstr="#001f3f");	background: -o-linear-gradient(top,#006ddb,001f3f);
-		
-			background-color:#006ddb;
-			border:0px solid #000000;
-			text-align:center;
-			border-width:0px 0px 1px 1px;
-			font-size:15px;
-			font-family:Georgia;
-			font-weight:bold;
-			color:#ffffff;
-		}
-		.SettingsTableCSS tr:first-child:hover td{
-			background:-o-linear-gradient(bottom, #006ddb 5%, #001f3f 100%);	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #006ddb), color-stop(1, #001f3f) );
-			background:-moz-linear-gradient( center top, #006ddb 5%, #001f3f 100% );
-			filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#006ddb", endColorstr="#001f3f");	background: -o-linear-gradient(top,#006ddb,001f3f);
-		
-			background-color:#006ddb;
-		}
-		.SettingsTableCSS tr:first-child td:first-child{
-			border-width:0px 0px 1px 0px;
-		}
-		.SettingsTableCSS tr:first-child td:last-child{
-			border-width:0px 0px 1px 1px;
-		}
-		
-		.SettingsTableCSS input:focus, textarea:focus{
-			border: 2px solid #E61010; 			
-		}
-		
-		.SettingsTableCSS input {
-			border-radius: 0.4em 0.4em 0.4em 0.4em;
-			padding: 0.15em;
-		}
-		
-	</style>
+	<apex:stylesheet value="{!URLFOR($Resource.GeoCoderZIP, 'css/Settings.css')}"/>
 	
 	<script type="text/javascript">
 		j$ = jQuery.noConflict();
@@ -136,7 +30,7 @@
 				<table>
 					<tr>
 						<td colspan="6">
-							<center>Geocoder Settings:</center>	
+							<center>Geocoding Engine Settings:</center>	
 						</td>
 					</tr>
 		
@@ -144,6 +38,30 @@
 						<td colspan="5">
 							<strong>API Keys:</strong>	
 						</td>
+					</tr>
+
+					<tr>
+						<td >						
+							<a href="https://developers.google.com/maps/documentation/geocoding/#api_key" target="_blank" >Get Key</a>						
+						</td>
+						<td >
+							Google: 
+						</td>
+						<td colspan="3">
+							<apex:inputText style="width: 99% " value="{!GoogleKey}" id="GoogleKey"/>
+						</td>	
+					</tr>
+
+					<tr>
+						<td >						
+							<a href="http://developer.mapquest.com/web/products/quick_start" target="_blank" >Get Key</a>						
+						</td>
+						<td >
+							Map Quest: 
+						</td>
+						<td colspan="3">
+							<apex:inputText style="width: 99% " value="{!MapQuestKey}" id="MapQuestKey"/>
+						</td>	
 					</tr>
 		
 					<tr>
@@ -157,19 +75,7 @@
 							<apex:inputText style="width: 99% " value="{!BingMapsKey}" id="BingMapsKey" />	
 						</td>
 					</tr>
-		
-					<tr>
-						<td >						
-							<a href="http://developer.mapquest.com/web/products/quick_start" target="_blank" >Get Key</a>						
-						</td>
-						<td >
-							Map Quest: 
-						</td>
-						<td colspan="3">
-							<apex:inputText style="width: 99% " value="{!MapQuestKey}" id="MapQuestKey"/>
-						</td>	
-					</tr>
-							
+									
 					<tr>
 						<td colspan="5">
 							<strong>Limits:</strong>	
@@ -188,7 +94,7 @@
 							Max Accounts Batch Size: 				
 						</td>
 						<td>
-							<apex:inputText value="{!AcctBatchSize}" id="AcctBatchSize" maxlength="2"/>
+							<apex:inputText value="{!AcctBatchSize}" id="AcctBatchSize" maxlength="3"/>
 						</td>
 					</tr>
 					<tr>
@@ -198,7 +104,64 @@
 							</center>
 						</td>
 					</tr>					
-				</table>			
+				</table>
+			</div>
+				
+				<br/>
+			<div class="SettingsTableCSS" >	
+				<table>
+					<tr>
+						<td colspan="6">
+							<center>Schedule Management:</center>	
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<b>Name</b>
+						</td>
+						<td>
+							<b>Last Run</b>
+						</td>
+						<td>
+							<b>Next Run</b>
+						</td>
+						<td>
+							<b>Control</b>
+						</td>						
+					</tr>					
+					<apex:repeat value="{!CronJobs}" var="Job">
+						<tr>
+							<td>
+								{!Job.CronJobDetail.Name}
+							</td>
+							<td>								
+								<apex:outputText value=" {0,date,MM'/'dd'/'yyyy 'at' HH:mm z}">
+								       <apex:param value="{!Job.PreviousFireTime}" />
+								</apex:outputText>															
+							</td>
+							<td>
+							
+								<apex:outputText value=" {0,date,MM'/'dd'/'yyyy 'at' HH:mm z}">
+								       <apex:param value="{!Job.NextFireTime}" />
+								</apex:outputText>															
+							</td>
+							<td>
+								<apex:commandButton action="{!DelCronJob}" value="Delete" rerender="FormWrapperOP" id="DelButton" onClick="BlockMe();" onComplete="UnBlockMe();" >							
+									<apex:param name="DelCronID" value="{!Job.Id}" assignTo="{!DelCronID}"/>
+								</apex:commandButton>
+								
+							</td>
+						</tr>					
+					</apex:repeat>
+					
+					<tr>
+						<td colspan="5">
+							<center>					
+								<apex:commandButton action="{!AddCronJob}" value="New" rerender="FormWrapperOP" id="NewButton" onClick="BlockMe();" onComplete="UnBlockMe();"/>
+							</center>
+						</td>
+					</tr>										
+				</table>							
 			</div>					
 		</apex:form>
 		<br/>
@@ -210,7 +173,7 @@
 	            
 	            <div id="MessageDialog" title="Geocoder Settings:">
 	                <center>
-	                	<apex:outputText escape="false" value="{!JqueryDialogMessage}"/>                             
+	                	<apex:outputText value="{!JqueryDialogMessage}"/>                             
 	                </center>	
 	            </div>
 	

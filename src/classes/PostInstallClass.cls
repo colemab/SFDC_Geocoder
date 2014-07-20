@@ -12,6 +12,16 @@ global without sharing class PostInstallClass  implements InstallHandler {
 				UnScheduleJob();
 			} // if(context.previousVersion() != null)
 		
+			if(context.isUpgrade()) {
+			
+				if(context.previousVersion().major() ==1 
+					&& context.previousVersion().minor() < 81)
+				{				
+					ClearDefaultRecords();
+				} // if(context.previousVersion < 1.81) {
+				
+			} // if(context.isUpgrade()) {
+			
 			CreateActiveSettings();
 		
 			this.ScheduleJob();
@@ -34,6 +44,28 @@ global without sharing class PostInstallClass  implements InstallHandler {
 		return !DefaultSettings.IsEmpty();
 		
 	} // HasActiveSettings
+	
+	private void ClearDefaultRecords() {
+		// this method will clear geocoding data for up to 10,000 records with default results
+		// this is to fix a bug in preivous versions and let the records be automatically processed again.
+		list <Account> RecordsToReset = [
+			SELECT Id, Name, BillingGeoCodeData__Latitude__s, BillingGeoCodeData__Longitude__s
+			FROM ACCOUNT
+			WHERE
+					(BillingGeoCodeData__Latitude__s = 39.390897 AND BillingGeoCodeData__Longitude__s = -99.066067)
+				OR
+					(BillingGeoCodeData__Latitude__s = 39.44325637817383 AND BillingGeoCodeData__Longitude__s = -98.95733642578125)
+			LIMIT 10000		
+		];
+		
+		for (Account A: RecordsToReset) {
+			A.BillingGeoCodeData__Latitude__s = null;
+			A.BillingGeoCodeData__Longitude__s = null;
+		}
+		
+		update RecordsToReset;
+		
+	} // ClearDefaultRecords
 	
 	private void CreateActiveSettings() {
 		
@@ -106,9 +138,19 @@ global without sharing class PostInstallClass  implements InstallHandler {
 		DC_GG__CronInfo__c CronSettings = DC_GG__CronInfo__c.getInstance('LastRun');
 		
 		if (CronSettings != null) {
+			
 			ID CronID = CronSettings.DC_GG__JobID__c;
-			system.abortJob(CronID);
-		}
+						
+			if (Schema.Sobjecttype.DC_GG__CronInfo__c.isUpdateable()) {
+				CronSettings.DC_GG__JobID__c = null;
+				update CronSettings;
+			} // DC_GG__CronInfo__c.isUpdateable
+			
+			if (CronID != null) {
+				system.abortJob(CronID);
+			} // if (CronID != null) {
+			
+		} // if (CronSettings != null) {
 		
 	} // UnScheduleJob
 	

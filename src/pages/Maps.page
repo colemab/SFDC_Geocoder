@@ -1,0 +1,293 @@
+<apex:page showHeader="false" controller="VF_Maps" readOnly="true">
+
+		<apex:stylesheet value="{!URLFOR($Resource.GeoCoderZIP, 'css/Map.css')}"/>		
+		<apex:includeScript value="{!URLFOR($Resource.GeoCoderZIP, 'js/Maps.js')}"/>
+		<apex:includeScript value="{!URLFOR($Resource.GeoCoderZIP, 'js/markerclusterer_compiled.js')}"/>
+		
+    	<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=visualization"></script>
+
+		<apex:includeScript value="{!$Resource.jquery}"/>
+		<apex:includeScript value="{!$Resource.jqueryblockUI}"/>	
+	
+		<apex:includeScript value="{!URLFOR($Resource.jqueryUI, 'jqueryui.js')}"/>
+		<apex:stylesheet value="{!URLFOR($Resource.jqueryUI, 'start-jquery-ui.css')}"/>
+
+		<apex:stylesheet value="{!URLFOR($Resource.GeoCoderZIP, 'css/Lookup.css')}"/>
+		<apex:includeScript value="{!URLFOR($Resource.GeoCoderZIP, 'js/Lookup.js')}"/>
+			  
+	<script>
+
+			// Vars for google maps objects
+			var map, pointarray, heatmap, markerclusterer;
+	
+			// vars for GUI settings
+			var ShowMarkers = true;
+			var ShowHeatMap = false;
+			var ShowMarkerClusters = false;
+			var ShowSearch = false;
+												
+			function JqueryUIGUIInit() {
+				j$( "#chkSearch" ).button({
+					icons: {
+						primary: "ui-icon-search"
+					}		
+				});
+				
+				j$( "#chkHeatmap" ).button({
+					icons: {
+						primary: "ui-icon-signal-diag"
+					}, text: false
+				});
+										
+				j$( "#chkMarkers" ).button({
+					icons: {
+						primary: "ui-icon-flag"
+					}, text: false		
+				});
+
+				j$( "#btnGradient" ).button({
+					icons: {
+						primary: "ui-icon-image"
+					}, text: false		
+				});
+
+				j$( "#chkClusterMarkers" ).button({
+					icons: {
+						primary: "ui-icon-gear"
+					}, text: false		
+				});
+				
+				changeOpacity();
+				changeRadius();		
+				
+				HideShowSearchDiv();	
+			
+			} // JqueryUIGUIInit()
+		
+								
+			function changeGradient() {
+			  var gradient = [
+				'rgba(0, 255, 255, 0)',
+				'rgba(0, 255, 255, 1)',
+				'rgba(0, 191, 255, 1)',
+				'rgba(0, 127, 255, 1)',
+				'rgba(0, 63, 255, 1)',
+				'rgba(0, 0, 255, 1)',
+				'rgba(0, 0, 223, 1)',
+				'rgba(0, 0, 191, 1)',
+				'rgba(0, 0, 159, 1)',
+				'rgba(0, 0, 127, 1)',
+				'rgba(63, 0, 91, 1)',
+				'rgba(127, 0, 63, 1)',
+				'rgba(191, 0, 31, 1)',
+				'rgba(255, 0, 0, 1)'
+			  ]
+			  heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);
+			}
+					
+		</script>
+		
+		<apex:form id="MainForm">
+						
+		    <div id="SearchPanel">
+					
+					<apex:actionFunction name="UpdateObjectType" action="{!UpdateObjectToFilter}" reRender="QueryFilterPanel" />
+				
+					<apex:OutputLabel value="Search On:" for="ObjectTypeName"/>
+					<apex:selectRadio value="{!ObjectTypeName}" id="ObjectTypeName" onChange="UpdateObjectType();">
+						<apex:selectOption itemValue="Account" itemLabel="Account" />
+						<apex:selectOption itemValue="Opportunity" itemLabel="Opportunity" />
+					</apex:selectRadio>
+					
+					<apex:outputPanel id="QueryFilterPanel">
+						<apex:actionRegion >		
+							<apex:repeat value="{!SOQLQueryFilterDataList}" var="QueryData">
+											
+									<apex:selectList value="{!QueryData.FieldName}" size="1" id="FieldName" styleClass="lineItem">
+										<apex:selectOptions value="{!FieldsSelectOptionList}" />
+										<apex:actionSupport event="onchange" action="{!BuildQueryString}" rerender="QueryFilterPanel,FilterLogic" onsubmit="BlockMe();" onComplete="UnBlockMe();" />
+									</apex:selectList>
+									
+									&nbsp;
+									
+									<apex:selectList value="{!QueryData.Operator}" size="1" id="Operator" style="width: 125px;" styleClass="lineItem">
+										<apex:selectOptions value="{!QueryData.OperatorList}" />
+									</apex:selectList>
+									
+									&nbsp;
+												
+									<apex:inputText id="InputValue" value="{!QueryData.Value}" styleClass="lineItem" onChange="closeLookupWindow();" />												
+							
+									<apex:outputPanel id="CustomLookupWindow" rendered="{!QueryData.RenderLookupIcon}" styleClass="lineItem">
+										&nbsp;
+				
+										<img title="Lookup (New Window)" onclick="openLookupWindow('apex/CustomLookupWindow?object={!CurrentObjectName}&field={!QueryData.FieldNameUTF8}&input={!URLENCODE($Component.InputValue)}')" onmouseover="this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onblur="this.className = 'lookupIcon';" class="lookupIcon" alt="Lookup (New Window)" src="/s.gif" />
+									
+									</apex:outputPanel>
+									
+									<apex:outputPanel id="DatePickerWindow" rendered="{!QueryData.RenderDatePickerIcon}" styleClass="lineItem">
+										<script>																	
+											 j$(function() {				
+											 	j$(esc('{!$Component.InputValue}')).datepicker({});
+											 });							 
+										</script>
+									</apex:outputPanel>
+				
+									<apex:outputPanel id="DateTimePickerWindow" rendered="{!QueryData.RenderDateTimePickerIcon}" styleClass="lineItem">
+				
+										<apex:selectList value="{!QueryData.Hour}" size="1" id="Hour" style="width: 47px;" styleClass="lineItem">
+											<apex:selectOptions value="{!QueryData.HourList}" />
+											<apex:actionSupport event="onchange" action="{!BuildQueryString}" rerender="QueryFilterPanel,FilterLogic" onsubmit="BlockMe();" onComplete="UnBlockMe();" />
+										</apex:selectList>
+										
+										&nbsp;
+				
+										<apex:selectList value="{!QueryData.Minute}" size="1" id="Minute" style="width: 47px;" styleClass="lineItem">
+											<apex:selectOptions value="{!QueryData.MinuteList}" />
+											<apex:actionSupport event="onchange" action="{!BuildQueryString}" rerender="QueryFilterPanel,FilterLogic" onsubmit="BlockMe();" onComplete="UnBlockMe();" />
+										</apex:selectList>
+										
+										&nbsp;
+				
+										<apex:selectList value="{!QueryData.AMPM}" size="1" id="AMPM" style="width: 47px;" styleClass="lineItem">
+											<apex:selectOptions value="{!QueryData.AMPMList}" />
+											<apex:actionSupport event="onchange" action="{!BuildQueryString}" rerender="QueryFilterPanel,FilterLogic" onsubmit="BlockMe();" onComplete="UnBlockMe();" />
+										</apex:selectList>
+										
+										&nbsp;
+										
+									</apex:outputPanel>
+								
+									<br/>
+																
+							</apex:repeat>
+						</apex:actionRegion>
+						
+						<br/>
+				
+						<apex:commandButton id="AddButton" value="Add Row" action="{!AddQueryFilterDataRow}" reRender="QueryFilterPanel" onClick="BlockMe();" onComplete="UnBlockMe();"/>
+						<apex:commandButton id="RemoveButton" value="Remove Row" action="{!RemoveQueryFilterDataRow}" reRender="QueryFilterPanel,FilterLogic" onClick="BlockMe();" onComplete="UnBlockMe();"/>
+						<apex:commandButton id="RunSearchButton" value="Run Search" action="{!RunSearch}" reRender="MapArea,AccountsList,FilterLogic" onClick="BlockMe();" onComplete="UnBlockMe();initialize();"/>
+						<br/> <br/>		
+					</apex:outputPanel>
+					
+					<apex:outputPanel id="FilterLogic">
+						<apex:commandLink action="{!ToggleAdvancedFilter}" immediate="True" value="Add Filter Logic..." reRender="FilterLogic" rendered="{!NOT(AdvancedFilterEnabled)}" onClick="BlockMe();" onComplete="UnBlockMe();"/>
+						<apex:commandLink action="{!ToggleAdvancedFilter}" immediate="True" value="Clear Filter Logic" reRender="FilterLogic" rendered="{!AdvancedFilterEnabled}" onClick="BlockMe();" onComplete="UnBlockMe();"/>
+						<br/>
+						<apex:outputPanel id="AdvancedFilterCondition" rendered="{!AdvancedFilterEnabled}">
+							Filter Logic:<br/>
+							<apex:inputText value="{!AdvancedFilterCondition}" size="74">
+								<apex:actionSupport event="onchange" action="{!BuildQueryString}" rerender="FilterLogic" onsubmit="BlockMe();" onComplete="UnBlockMe();" />				
+							</apex:inputText>
+							<br/>
+							<apex:outputPanel id="AdvancedFilterConditionError" style="color: #D74C3B;" rendered="{!AdvancedFilterCondtionHasError}">
+								<strong>Error:&nbsp;</strong>
+								<apex:outputText value="{!AdvancedFilterCondtionErrorMessage}" />
+							</apex:outputPanel>
+						</apex:outputPanel>
+						<br/>
+					</apex:outputPanel>
+			
+	    	</div>
+	</apex:form>
+		   	   
+		    <apex:outputPanel id="MapArea">				    
+				
+				<script>					
+				
+					// vars for data
+					var AccountsData = new Array();
+					var PointsData = new Array();
+					var MarkersArray = new Array();
+						
+					<apex:Repeat value="{!AccountsToMap}" var="List" id="AccountsList">								
+						<apex:Repeat value="{!List.ListofAccountsToMap}" var="Account">									
+							var AccountInfo = new AccountInformation("{!JSENCODE(Account.Name)}","{!Account.Latitude}","{!Account.Longitude}","{!JSENCODE(Account.Description)}");					
+							AccountsData.push(AccountInfo);
+						</apex:Repeat>
+					</apex:Repeat>
+								
+					function initialize() {
+					  
+						  var mapOptions = {
+							zoom: 5,
+							center: new google.maps.LatLng(37.09024,-95.712891)					
+						  };
+				
+						  map = new google.maps.Map(document.getElementById('map-canvas'),
+							  mapOptions);				  								
+				
+						for (var i = 0; i < AccountsData.length; i++) {
+						  	var CurrentPoint = new google.maps.LatLng(AccountsData[i].Lat,AccountsData[i].Long);
+						  	var AccountName = AccountsData[i].Name;
+						  	var AccountDesc = AccountsData[i].Desc;
+						  	
+							var marker = new google.maps.Marker({
+								position: CurrentPoint,
+								map: map,
+								title: AccountName																			
+							});
+							
+							addPopUpWindow(marker, AccountDesc);
+												
+							// Markers array is used to add makers directly to the map or via Marker Clusters
+							MarkersArray.push(marker);
+							
+							// Points Data is used to create the points Array for the heat map
+							PointsData.push(CurrentPoint);
+							
+						  } // for loop
+		
+						  	var pointArray = new google.maps.MVCArray(PointsData);
+			
+							j$( "#SearchPanel" ).hide();
+							j$( "#HeatMapSettingsPanel" ).hide();
+			
+							if (typeof heatmap === "undefined" ) {
+							  heatmap = new google.maps.visualization.HeatmapLayer({
+								map: null,
+								data: pointArray,
+								dissipating: true,
+								radius: 70,
+								opacity: 0.5
+							  });
+							} else {
+								heatmap.setData(pointArray);
+							} // ShowHeatMap == undefined
+										
+							JqueryUIGUIInit();	
+																														  						  
+					} // initialize				
+														  				  				  		
+					google.maps.event.addDomListener(window, 'load', initialize);
+					
+			
+			
+				</script>
+
+					    	
+		    	<div id="map-canvas"></div>
+			    
+			    <div id="RightPanel">			    	 			 
+
+			    	<input type="checkbox" id="chkSearch" onclick="ToggleSearchDiv()" /><label for="chkSearch">&nbsp;Search&nbsp;</label><br/>
+			    				    	
+			    	<input type="checkbox" id="chkMarkers" onclick="toggleMarkers()" checked="yes" /><label for="chkMarkers">Markers</label>
+			    	
+			    	<input type="checkbox" id="chkClusterMarkers" onclick="toggleClusters()" /><label for="chkClusterMarkers">Cluster</label>
+			    	
+			    	<input type="checkbox" id="chkHeatmap" onclick="toggleHeatmap()" /><label for="chkHeatmap">Heatmap</label><br/>
+			    		    			      	
+			      	<div id="HeatMapSettingsPanel">
+			      		<button id="btnGradient" onclick="changeGradient()">Change gradient</button><br/>
+			      		<div id="RadiusPanel"></div> Radius
+			      		<div id="OpacityPanel"></div> Opacity<br/>
+			      	</div>
+			    	<hr/>
+					Total: {!TotalRows}
+			    </div>
+			    		    	
+		    </apex:outputPanel>	    
+		    		  
+</apex:page>

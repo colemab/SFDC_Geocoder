@@ -64,7 +64,7 @@ public without sharing class EmailExceptionToAdmin {
 		String PrimaryContactEmailAddress = '';
 		
 		// 1. Determine the Primary Contact Name
-		Organization SFDC_OrgInfo = [SELECT PRIMARYCONTACT FROM ORGANIZATION];
+		Organization SFDC_OrgInfo = [SELECT PRIMARYCONTACT FROM ORGANIZATION LIMIT 1];
 		
 		// 2. Find the primary contact email in user table
 		User PrimaryContactUser = [SELECT email FROM User WHERE NAME = :SFDC_OrgInfo.PRIMARYCONTACT LIMIT 1];

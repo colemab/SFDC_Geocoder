@@ -5,6 +5,10 @@
         <type>Default</type>
     </actionOverrides>
     <actionOverrides>
+        <actionName>CancelEdit</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
         <actionName>Clone</actionName>
         <type>Default</type>
     </actionOverrides>
@@ -17,11 +21,19 @@
         <type>Default</type>
     </actionOverrides>
     <actionOverrides>
+        <actionName>Follow</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
         <actionName>List</actionName>
         <type>Default</type>
     </actionOverrides>
     <actionOverrides>
         <actionName>New</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>SaveEdit</actionName>
         <type>Default</type>
     </actionOverrides>
     <actionOverrides>
@@ -32,13 +44,28 @@
         <actionName>View</actionName>
         <type>Default</type>
     </actionOverrides>
+    <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
     <deprecated>false</deprecated>
     <description>04/26/13 TC - This keeps a log of the last geocoding request results.</description>
     <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
     <enableFeeds>false</enableFeeds>
     <enableHistory>false</enableHistory>
     <enableReports>true</enableReports>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <fields>
+        <fullName>Link_to_record__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <formula>HYPERLINK(&quot;/&quot; &amp;  RecordID__c , &quot;View Record&quot;)</formula>
+        <label>Link to record</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
     <fields>
         <fullName>NameNumber__c</fullName>
         <deprecated>false</deprecated>
@@ -49,6 +76,7 @@
         <precision>18</precision>
         <required>false</required>
         <scale>0</scale>
+        <trackTrending>false</trackTrending>
         <type>Number</type>
         <unique>false</unique>
     </fields>
@@ -59,6 +87,7 @@
         <label>RecordID</label>
         <length>18</length>
         <required>false</required>
+        <trackTrending>false</trackTrending>
         <type>Text</type>
         <unique>false</unique>
     </fields>
@@ -69,6 +98,7 @@
         <externalId>false</externalId>
         <label>Request URL</label>
         <length>1200</length>
+        <trackTrending>false</trackTrending>
         <type>LongTextArea</type>
         <visibleLines>3</visibleLines>
     </fields>
@@ -79,6 +109,7 @@
         <label>Status</label>
         <length>255</length>
         <required>false</required>
+        <trackTrending>false</trackTrending>
         <type>Text</type>
         <unique>false</unique>
     </fields>
@@ -88,6 +119,7 @@
         <externalId>false</externalId>
         <label>TimeStamp</label>
         <required>false</required>
+        <trackTrending>false</trackTrending>
         <type>DateTime</type>
     </fields>
     <label>Log</label>
@@ -96,10 +128,55 @@
         <columns>NAME</columns>
         <columns>TimeStamp__c</columns>
         <columns>Status__c</columns>
-        <columns>RecordID__c</columns>
+        <columns>Link_to_record__c</columns>
         <columns>Request_URL__c</columns>
         <filterScope>Everything</filterScope>
         <label>All</label>
+    </listViews>
+    <listViews>
+        <fullName>Exceptions</fullName>
+        <columns>NAME</columns>
+        <columns>TimeStamp__c</columns>
+        <columns>Status__c</columns>
+        <columns>RecordID__c</columns>
+        <columns>Request_URL__c</columns>
+        <filterScope>Everything</filterScope>
+        <filters>
+            <field>Status__c</field>
+            <operation>equals</operation>
+            <value>APEX_EXCEPTION</value>
+        </filters>
+        <label>Exceptions</label>
+    </listViews>
+    <listViews>
+        <fullName>Ok</fullName>
+        <columns>NAME</columns>
+        <columns>TimeStamp__c</columns>
+        <columns>Status__c</columns>
+        <columns>RecordID__c</columns>
+        <columns>Request_URL__c</columns>
+        <filterScope>Everything</filterScope>
+        <filters>
+            <field>Status__c</field>
+            <operation>equals</operation>
+            <value>OK</value>
+        </filters>
+        <label>Ok</label>
+    </listViews>
+    <listViews>
+        <fullName>Overy_Query_Limit</fullName>
+        <columns>NAME</columns>
+        <columns>TimeStamp__c</columns>
+        <columns>Status__c</columns>
+        <columns>RecordID__c</columns>
+        <columns>Request_URL__c</columns>
+        <filterScope>Everything</filterScope>
+        <filters>
+            <field>Status__c</field>
+            <operation>equals</operation>
+            <value>OVER_QUERY_LIMIT</value>
+        </filters>
+        <label>Overy Query Limit</label>
     </listViews>
     <nameField>
         <displayFormat>{0000}</displayFormat>

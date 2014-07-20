@@ -6,7 +6,7 @@
     <enableFeeds>false</enableFeeds>
     <fields>
         <fullName>BatchSize__c</fullName>
-        <defaultValue>10</defaultValue>
+        <defaultValue>200</defaultValue>
         <deprecated>false</deprecated>
         <description>This is the number of records the BatchGeocodeAccounts class will query for on each instance.  Please note that this is NOT the chunk/batch size!</description>
         <externalId>false</externalId>
@@ -14,6 +14,7 @@
         <precision>18</precision>
         <required>false</required>
         <scale>0</scale>
+        <trackTrending>false</trackTrending>
         <type>Number</type>
         <unique>false</unique>
     </fields>
@@ -25,6 +26,7 @@
         <label>BingMapsKey</label>
         <length>255</length>
         <required>false</required>
+        <trackTrending>false</trackTrending>
         <type>Text</type>
         <unique>false</unique>
     </fields>
@@ -38,6 +40,18 @@ This is a comma delimited list of GeoCoding service implementations.</descriptio
         <label>GeoCodeServiceNames</label>
         <length>255</length>
         <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>GoogleKey__c</fullName>
+        <description>07/08/14 TC - This API key is used to over ride an IP address&apos;s limits with the application limits.  Very handy on a multi-tenant platform like salesforce.</description>
+        <externalId>false</externalId>
+        <label>GoogleKey</label>
+        <length>255</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
         <type>Text</type>
         <unique>false</unique>
     </fields>
@@ -49,6 +63,7 @@ This is a comma delimited list of GeoCoding service implementations.</descriptio
         <label>MapQuestKey</label>
         <length>255</length>
         <required>false</required>
+        <trackTrending>false</trackTrending>
         <type>Text</type>
         <unique>false</unique>
     </fields>
@@ -62,6 +77,7 @@ This is a comma delimited list of GeoCoding service implementations.</descriptio
         <precision>18</precision>
         <required>false</required>
         <scale>0</scale>
+        <trackTrending>false</trackTrending>
         <type>Number</type>
         <unique>false</unique>
     </fields>
