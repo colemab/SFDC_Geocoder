@@ -10,9 +10,15 @@ public with sharing class GeoCodeResult {
     // these will get set by the geocoder implementation (i.e. bing, google)
     public double Longitude {get;set;}
     public double Latitude {get;set;}
+
     public string Status {get;set;}
     public string RequestURL {get;set;} 
+
     public datetime TimeStamp {get;set;}
+    public string TraceMessage {get;set;}
+
+	public string Engine {get;set;}
+	public string Quality {get;set;}
     
     // but this will get set by the actual calling program
     public id RecordID {get;set;}        

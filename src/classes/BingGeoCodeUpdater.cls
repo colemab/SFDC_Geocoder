@@ -1,18 +1,17 @@
 public with sharing class BingGeoCodeUpdater implements GeoCodeService{ 
 
 	public class BingJSONPoint { 
-		string coordinates;
+		string[] coordinates;
 		string type;
 	} // BingJSONPoint
 	
 	public class BingJSONResource {
-		string confidence;
-        string entityType;
-		
-		//geocodePoints
-		
+
 		string name;
 		BingJSONPoint point;
+
+		string confidence;
+        string entityType;
 		
 	} // BingJSONResource
 	
@@ -25,13 +24,12 @@ public with sharing class BingGeoCodeUpdater implements GeoCodeService{
 		string authenticationResultCode;
 		string brandLogoUri;
 		string copyright;
-		//BingJSONResourceSets resourceSets;
+		BingJSONResourceSets[] resourceSets;
 		string statusCode;
 		string statusDescription;
 		string traceId;
-		
-		/*
-		public BingJSONResponse(string A, string B, string C, BingJSONResourceSets RS, string SC, string SD, string T) {
+
+		public BingJSONResponse(string A, string B, string C, BingJSONResourceSets[] RS, string SC, string SD, string T) {
 			authenticationResultCode = A;
 			brandLogoUri = B;
 			copyright = C;
@@ -40,9 +38,14 @@ public with sharing class BingGeoCodeUpdater implements GeoCodeService{
 			statusDescription = SD;
 			traceId = T;			
 		} // init
-		*/
+
 	} // BingJSONResponse
 
+	public class BingJSONResponseStatus {
+		string statusCode;
+		string statusDescription;		
+	} // BingJSONResponseStatus
+	
     public string getAPIKey() {
         string ReturnValue = '';
         
@@ -55,6 +58,7 @@ public with sharing class BingGeoCodeUpdater implements GeoCodeService{
     public GeoCodeResult GeoCodeAddress(String StreetAddress, String City, String State, String PostalCode, String Country) 
     {
         GeoCodeResult CurrentGeoCodeResult = new GeoCodeResult();
+        CurrentGeoCodeResult.Engine = 'Bing';
         
         // format the string for the Bing Maps engine
         String FormattedAddress = BuildAddressString(StreetAddress, City, State, PostalCode, Country);
@@ -65,28 +69,47 @@ public with sharing class BingGeoCodeUpdater implements GeoCodeService{
             CurrentGeoCodeResult.Status = 'NO_API_KEY';
         } else if (!String.isBlank(FormattedAddress)) {
             
-            string GeoCodeRequestURL = 'http://dev.virtualearth.net/REST/v1/Locations'+ FormattedAddress + '?key=' + key + '&maxResults=1';
-            CurrentGeoCodeResult.RequestURL = GeoCodeRequestURL;
-            system.debug('Request URL was: ' + GeoCodeRequestURL);
-            
-            // Setup and make the HTTP callout
-            HttpRequest GeoCodeRequest = new HttpRequest();
-            Http GeoCodeHttp = new Http();               
-            GeoCodeRequest.setMethod('GET');            
-            GeoCodeRequest.setEndpoint(GeoCodeRequestURL);
-            GeoCodeRequest.setTimeout(120000);
-            
-            HttpResponse GeoCodeResponse = GeoCodeHttp.send(GeoCodeRequest);
-                        
-			// Transform the response into our custom classes . . .
-			//BingJSONResponse Response = (BingJSONResponse) JSON.deserialize(GeoCodeResponse.getBody(), BingJSONResponse.class);
-            
-            //system.debug('Status = ' + Response.statusCode);
-            //system.debug('StatusDescription = ' + Response.statusDescription);
-            
-            // Send the current data to the parse method with the response body
-            // This is so it can update the wrapper class instance with the parsed data
-            CurrentGeoCodeResult = ParseGeoCodeJSONReponse(CurrentGeoCodeResult, GeoCodeResponse.getBody());
+            try {
+	            string GeoCodeRequestURL = 'http://dev.virtualearth.net/REST/v1/Locations'+ FormattedAddress + '?key=' + key + '&maxResults=1';
+	            CurrentGeoCodeResult.RequestURL = GeoCodeRequestURL;
+	            system.debug('Request URL was: ' + GeoCodeRequestURL);
+	            
+	            // Setup and make the HTTP callout
+	            HttpRequest GeoCodeRequest = new HttpRequest();
+	            Http GeoCodeHttp = new Http();               
+	            GeoCodeRequest.setMethod('GET');            
+	            GeoCodeRequest.setEndpoint(GeoCodeRequestURL);
+	            GeoCodeRequest.setTimeout(120000);
+	            
+	            HttpResponse GeoCodeResponse = GeoCodeHttp.send(GeoCodeRequest);
+	
+				BingJSONResponseStatus ResponseStatus = (BingJSONResponseStatus) JSON.deserialize(GeoCodeResponse.getBody(), BingJSONResponseStatus.class);
+	            system.debug('Status = ' + ResponseStatus.statusCode);
+	            system.debug('StatusDescription = ' + ResponseStatus.statusDescription);
+				
+				CurrentGeoCodeResult.Status = ResponseStatus.statusDescription;
+				
+				if (ResponseStatus.statusDescription == 'OK') {
+					// Transform the response into our custom classes . . .
+					BingJSONResponse Response = (BingJSONResponse) JSON.deserialize(GeoCodeResponse.getBody(), BingJSONResponse.class);
+	            
+		            // Send the current data to the parse method with the response body
+		            // This is so it can update the wrapper class instance with the parsed data
+		            //CurrentGeoCodeResult = ParseGeoCodeJSONReponse(CurrentGeoCodeResult, GeoCodeResponse.getBody());
+		              CurrentGeoCodeResult = ParseGeoCodeJSONReponse(CurrentGeoCodeResult, Response);
+				}
+				
+			} catch (Exception e) {
+							
+				CurrentGeoCodeResult.Status = 'APEX_EXCEPTION';
+	
+				String ExceptionDetails = 'Exception Type Name: ' + e.getTypeName() + ' --- Exception Message: ' + e.getMessage() + ' --- Exception Cause: ' + e.getCause() + ' --- Exception LineNumber: ' + e.getLineNumber();
+				CurrentGeoCodeResult.TraceMessage = ExceptionDetails;
+	
+				CurrentGeoCodeResult.TimeStamp = System.now();			 
+				return CurrentGeoCodeResult;
+						 
+			} // try & catch on update - just in case we hit any JSON parsing errors
             
         } else {
             CurrentGeoCodeResult.Status = 'BLANK_ADDRESS';
@@ -97,64 +120,44 @@ public with sharing class BingGeoCodeUpdater implements GeoCodeService{
         return CurrentGeoCodeResult;
     } // GeoCodeAddress
 
-    private static GeoCodeResult ParseGeoCodeJSONReponse(GeoCodeResult IncomingGeoCodeResult, String ResponseBody) {
- 
+    private static GeoCodeResult ParseGeoCodeJSONReponse(GeoCodeResult IncomingGeoCodeResult, BingJSONResponse R) {
+          
         GeoCodeResult ReturnGeoCodeResult = IncomingGeoCodeResult;
-          
-        JSONParser parser = JSON.createParser(ResponseBody);
-        
-        String StatusResult = '';
-         
-        system.debug('ResponseBody = ' + ResponseBody);
+        system.debug('resourceSets.size = ' + R.resourceSets.size());
 
-         while (parser.nextToken() != null) {
-            if ((parser.getCurrentToken() == JSONToken.FIELD_NAME) &&
-                (parser.getText() == 'statusDescription')) {
-                    parser.nextToken();
-                    StatusResult = parser.getText();
-                    system.debug('Status was: ' + StatusResult);
-                    ReturnGeoCodeResult.Status = StatusResult;
-                    break;
-            } // if status          
-         }  // loop thru looking for Status
-          
-        if (StatusResult == 'OK') {
-            // parse the results from the start again
-            parser = JSON.createParser(ResponseBody);
-            while (parser.nextToken() != null) {
-                                                                                 
-                            if ((parser.getCurrentToken() == JSONToken.FIELD_NAME) &&
-                                (parser.getText() == 'coordinates')) {
-                                
-                                // skip to the [
-                                parser.nextToken();
-                                
-                                // now get the first value
-                                parser.nextToken(); 
-                                ReturnGeoCodeResult.Latitude = parser.getDoubleValue();                          
-                                system.debug('Found Latitude: ' + ReturnGeoCodeResult.Latitude);                                    
-    
-                                // now get the 2nd value
-                                parser.nextToken();                                                                                                                  
-                                ReturnGeoCodeResult.Longitude = parser.getDoubleValue();
-                                system.debug('Found Longitude: ' + ReturnGeoCodeResult.Longitude);                                  
-    
-    							// Lat 39.44325637817383  and Long -98.95733642578125
-    							// are default values for the middle of the country - ignore these!
-    							if (ReturnGeoCodeResult.Latitude == 39.44325637817383 &&
-    								ReturnGeoCodeResult.Longitude == -98.95733642578125) {
-    								system.debug('Bing returned default US value - IGNORING!'); 
-                                	ReturnGeoCodeResult.Longitude = 0;
-                                	ReturnGeoCodeResult.Latitude = 0;
-                                } // check for bad results
-                                
-                            } // if point    
-                                         
-                } // while (parser.nextToken() != null)
-            } // if (ReturnGeoCodeResult.Status == 'OK') {         
+ 		for (BingJSONResourceSets RS : R.resourceSets) {
+ 			system.debug('RS.estimatedTotal = ' + RS.estimatedTotal);
+ 			
+ 			for (BingJSONResource Rec : RS.resources) {
+
+				system.debug('Rec.name = ' + Rec.name);
+		
+				system.debug('Coordinates.size =' + Rec.point.coordinates.size());
+
+				if (Rec.point.coordinates.size() == 2) {
+					
+					ReturnGeoCodeResult.Quality = Rec.confidence;
+
+					ReturnGeoCodeResult.Latitude = Double.valueOf(Rec.point.coordinates.get(0));
+					system.debug('Found Latitude: ' + ReturnGeoCodeResult.Latitude);
+					
+					ReturnGeoCodeResult.Longitude = Double.valueOf(Rec.point.coordinates.get(1));
+					system.debug('Found Longitude: ' + ReturnGeoCodeResult.Longitude);
+					
+					break;
+				} // sanity check for coords size
+         		
+         		if (ReturnGeoCodeResult.Latitude != null) {
+         			break;
+         		} // only take the top result
+         				
+ 			} // loop thru resources
+ 			
+ 		} // loop thru resourceSets
+
         return ReturnGeoCodeResult;
-          
-    } // ParseGeoCodeJSONReponse        
+ 		
+    } // GeoCodeResult
 
 
     // this method builds the string for use in the URL

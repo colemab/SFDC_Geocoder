@@ -72,7 +72,7 @@ public without sharing class GeoCodeEngine {
 			ExceptionGeoCodeResult.Status = 'APEX_EXCEPTION';
 
 			String ExceptionDetails = 'Exception Type Name: ' + e.getTypeName() + ' --- Exception Message: ' + e.getMessage() + ' --- Exception Cause: ' + e.getCause() + ' --- Exception LineNumber: ' + e.getLineNumber();
-			ExceptionGeoCodeResult.RequestURL = ExceptionDetails;
+			ExceptionGeoCodeResult.TraceMessage = ExceptionDetails;
 
 			ExceptionGeoCodeResult.TimeStamp = System.now();			 
 			ExceptionGeoCodeResult.RecordID = A.ID;
@@ -94,7 +94,7 @@ public without sharing class GeoCodeEngine {
 			ExceptionGeoCodeResult.Status = 'APEX_EXCEPTION';
 
 			String ExceptionDetails = 'Exception Type Name: ' + e.getTypeName() + ' --- Exception Message: ' + e.getMessage() + ' --- Exception Cause: ' + e.getCause() + ' --- Exception LineNumber: ' + e.getLineNumber();
-			ExceptionGeoCodeResult.RequestURL = ExceptionDetails;
+			ExceptionGeoCodeResult.TraceMessage = ExceptionDetails;
 
 			ExceptionGeoCodeResult.TimeStamp = System.now();			 
 			ExceptionGeoCodeResult.RecordID = A.ID;
@@ -116,6 +116,8 @@ public without sharing class GeoCodeEngine {
             if (BillingGeoCodeResult.HasResults == true) {
                 A.BillingGeoCodeData__Latitude__s = BillingGeoCodeResult.Latitude;
                 A.BillingGeoCodeData__Longitude__s = BillingGeoCodeResult.Longitude;
+                A.DC_GG__BillingGeoCodeEngine__c = BillingGeoCodeResult.Engine;
+                A.DC_GG__BillingGeoCodeQuality__c = BillingGeoCodeResult.Quality;
             } else if (BillingGeoCodeResult.Status == 'BLANK_ADDRESS') {
 				// clear any long/lat data when the address is blank
 				A.BillingGeoCodeData__Latitude__s = null;
@@ -123,6 +125,12 @@ public without sharing class GeoCodeEngine {
             } // if (BillingGeoCodeResult.HasResults == true) {
             
             A.BillingLastGeocoded__c = BillingGeoCodeResult.TimeStamp.addMinutes(1);
+            
+            // in case an internal exception was logged, this will make sure the record ID is correct
+            if (BillingGeoCodeResult.RecordID == null) {
+            	BillingGeoCodeResult.RecordID = A.ID;
+            }
+            
         } else if (ShippingGeoCodeResult != null) {
             // One address could have been geocoded and thus will update the record
             // Then the other address will be seen as needing to be updated
@@ -141,6 +149,8 @@ public without sharing class GeoCodeEngine {
             if (ShippingGeoCodeResult.HasResults == true) {
                 A.ShippingGeoCodeData__Latitude__s = ShippingGeoCodeResult.Latitude;
                 A.ShippingGeoCodeData__Longitude__s = ShippingGeoCodeResult.Longitude;
+                A.DC_GG__ShippingGeoCodeEngine__c = ShippingGeoCodeResult.Engine;
+                A.DC_GG__ShippingGeoCodeQuality__c = ShippingGeoCodeResult.Quality;                
             } else if (ShippingGeoCodeResult.Status == 'BLANK_ADDRESS') {
 				// clear any long/lat data when the address is blank
 				A.ShippingGeoCodeData__Latitude__s = null;
@@ -148,6 +158,12 @@ public without sharing class GeoCodeEngine {
             } // if (ShippingGeoCodeResult.HasResults == true) {
             
             A.ShippingLastGeocoded__c = ShippingGeoCodeResult.TimeStamp.addMinutes(1);
+
+            // in case an internal exception was logged, this will make sure the record ID is correct
+            if (ShippingGeoCodeResult.RecordID == null) {
+            	ShippingGeoCodeResult.RecordID = A.ID;
+            }
+            
         } else if (BillingGeoCodeResult != null) {
             // One address could have been geocoded and thus will update the record
             // Then the other address will be seen as needing to be updated
@@ -180,7 +196,7 @@ public without sharing class GeoCodeEngine {
 			ExceptionGeoCodeResult.Status = 'APEX_EXCEPTION';
 
 			String ExceptionDetails = 'Exception Type Name: ' + e.getTypeName() + ' --- Exception Message: ' + e.getMessage() + ' --- Exception Cause: ' + e.getCause() + ' --- Exception LineNumber: ' + e.getLineNumber();
-			ExceptionGeoCodeResult.RequestURL = ExceptionDetails;
+			ExceptionGeoCodeResult.TraceMessage = ExceptionDetails;
 
 			ExceptionGeoCodeResult.TimeStamp = System.now();			 
 			ExceptionGeoCodeResult.RecordID = A.ID;
@@ -304,6 +320,7 @@ public without sharing class GeoCodeEngine {
                         CurrentLogEntry.DC_GG__Request_URL__c = CurrentResult.RequestURL;
                         CurrentLogEntry.DC_GG__TimeStamp__c = CurrentResult.TimeStamp;
                         CurrentLogEntry.DC_GG__RecordID__c = CurrentResult.RecordID;
+                        CurrentLogEntry.DC_GG__Trace_Message__c = CurrentResult.TraceMessage;
                         
                         LogEntriesToInsert.add(CurrentLogEntry);
                         

@@ -122,6 +122,15 @@
         <trackTrending>false</trackTrending>
         <type>DateTime</type>
     </fields>
+    <fields>
+        <fullName>Trace_Message__c</fullName>
+        <externalId>false</externalId>
+        <label>Trace Message</label>
+        <length>1024</length>
+        <trackTrending>false</trackTrending>
+        <type>LongTextArea</type>
+        <visibleLines>3</visibleLines>
+    </fields>
     <label>Log</label>
     <listViews>
         <fullName>All</fullName>

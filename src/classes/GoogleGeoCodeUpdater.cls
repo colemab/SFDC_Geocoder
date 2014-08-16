@@ -97,6 +97,10 @@ public with sharing class GoogleGeoCodeUpdater implements GeoCodeService{
 		
 	} // GoogleJSONResponse
 	
+	// place holder class to get just the status
+	public class GoogleJSONResponseStatus {
+		String Status;
+	} // GoogleJSONResponseStatus
 	
     public string getAPIKey() {
         string ReturnValue = '';
@@ -185,6 +189,7 @@ public with sharing class GoogleGeoCodeUpdater implements GeoCodeService{
     {
         
       	GeoCodeResult CurrentGeoCodeResult = new GeoCodeResult();
+      	CurrentGeoCodeResult.Engine = 'Google';
       	
 		String GeoCodeRequestURL = '';
 		String AddressRequestURL = '';
@@ -204,58 +209,78 @@ public with sharing class GoogleGeoCodeUpdater implements GeoCodeService{
 	           
 	        GeoCodeRequest.setMethod('GET');
 	        
-	        /*
-	        	07/18/2014 - Added component filtering
-	        	https://developers.google.com/maps/documentation/geocoding/#ComponentFiltering
-	        */   
-	        
-	        GeoCodeRequestURL = 'https://maps.googleapis.com/maps/api/geocode/json?address=' + AddressRequestURL;	          
+	        try {
+		        /*
+		        	07/18/2014 - Added component filtering
+		        	https://developers.google.com/maps/documentation/geocoding/#ComponentFiltering
+		        */   
+		        
+		        GeoCodeRequestURL = 'https://maps.googleapis.com/maps/api/geocode/json?address=' + AddressRequestURL;	          
+				
+				list<String> ComponentFilterURL = new list<string>(); 
+				string FinalComponentFilterURL = '';		
+				
+				// only use the postal code with a street address - otherwise city / state works better	
+				// for some reason people w/o street addresses are more likely to have typo in zip code 		
+				if (StreetAddress != '' && PostalCode != '') {
+					// use the left 5 of the postal code when populated
+					// zip codes are less likely to have typo's than city names				
+					ComponentFilterURL.add('postal_code:' + PostalCode.substring(0,5));
+				} else if (City != '') {
+					// otherwise use the city name
+					ComponentFilterURL.add('locality:' + City);
+				} else if (State != '') {
+					ComponentFilterURL.add('administrative_area:' + State);
+				} // check for postal code / city
+	
+				if (Country != '') {
+					ComponentFilterURL.add('country:' + Country);
+				} // check for country
+				
+				if (ComponentFilterURL.size() > 0) {
+					FinalComponentFilterURL = '&components=';
+					for (String S : ComponentFilterURL) {
+						FinalComponentFilterURL += EncodingUtil.urlEncode(S,'UTF-8') + '|';	
+					} // loop thru ComponentFilterURL
+					system.debug('FinalComponentFilterURL = ' + FinalComponentFilterURL);
+					GeoCodeRequestURL += FinalComponentFilterURL;
+				} // check for empty list						
+				
+				GeoCodeRequestURL += '&key=' + key;
+				
+				system.debug('Request URL was: ' + GeoCodeRequestURL);
+				CurrentGeoCodeResult.RequestURL = GeoCodeRequestURL;
+				      				
+				GeoCodeRequest.setEndpoint(GeoCodeRequestURL);
+	   			GeoCodeRequest.setTimeout(120000);
+	   			
+				HttpResponse GeoCodeResponse = GeoCodeHttp.send(GeoCodeRequest);
+				
+				GoogleJSONResponseStatus ReponseStatus = (GoogleJSONResponseStatus) JSON.deserialize(GeoCodeResponse.getBody(), GoogleJSONResponseStatus.class);
+				system.debug('ReponseStatus  = ' + ReponseStatus.Status);  
+				CurrentGeoCodeResult.Status = ReponseStatus.Status;
+				
+				if (ReponseStatus.Status == 'OK') {
+					
+					// Transform the response into our custom classes . . .
+					GoogleJSONResponse Response = (GoogleJSONResponse) JSON.deserialize(GeoCodeResponse.getBody(), GoogleJSONResponse.class);
+					
+					// Now process the data in those custom classes . . . 
+					CurrentGeoCodeResult = ParseGeoCodeJSONReponse(CurrentGeoCodeResult, Response);
+													
+				} // if (ReponseStatus.Status == 'OK') {
+			} catch (Exception e) {
+							
+				CurrentGeoCodeResult.Status = 'APEX_EXCEPTION';
+	
+				String ExceptionDetails = 'Exception Type Name: ' + e.getTypeName() + ' --- Exception Message: ' + e.getMessage() + ' --- Exception Cause: ' + e.getCause() + ' --- Exception LineNumber: ' + e.getLineNumber();
+				CurrentGeoCodeResult.TraceMessage = ExceptionDetails;
+	
+				CurrentGeoCodeResult.TimeStamp = System.now();			 
+				return CurrentGeoCodeResult;
+						 
+			} // try & catch on update - just in case we hit any JSON parsing errors
 			
-			list<String> ComponentFilterURL = new list<string>(); 
-			string FinalComponentFilterURL = '';		
-			
-			// only use the postal code with a street address - otherwise city / state works better	
-			// for some reason people w/o street addresses are more likely to have typo in zip code 		
-			if (StreetAddress != '' && PostalCode != '') {
-				// use the left 5 of the postal code when populated
-				// zip codes are less likely to have typo's than city names				
-				ComponentFilterURL.add('postal_code:' + PostalCode.substring(0,5));
-			} else if (City != '') {
-				// otherwise use the city name
-				ComponentFilterURL.add('locality:' + City);
-			} else if (State != '') {
-				ComponentFilterURL.add('administrative_area:' + State);
-			} // check for postal code / city
-
-			if (Country != '') {
-				ComponentFilterURL.add('country:' + Country);
-			} // check for country
-			
-			if (ComponentFilterURL.size() > 0) {
-				FinalComponentFilterURL = '&components=';
-				for (String S : ComponentFilterURL) {
-					FinalComponentFilterURL += EncodingUtil.urlEncode(S,'UTF-8') + '|';	
-				} // loop thru ComponentFilterURL
-				system.debug('FinalComponentFilterURL = ' + FinalComponentFilterURL);
-				GeoCodeRequestURL += FinalComponentFilterURL;
-			} // check for empty list						
-			
-			GeoCodeRequestURL += '&key=' + key;
-			
-			system.debug('Request URL was: ' + GeoCodeRequestURL);
-			CurrentGeoCodeResult.RequestURL = GeoCodeRequestURL;
-			      				
-			GeoCodeRequest.setEndpoint(GeoCodeRequestURL);
-   			GeoCodeRequest.setTimeout(120000);
-   			
-			HttpResponse GeoCodeResponse = GeoCodeHttp.send(GeoCodeRequest);
-			
-			// Transform the response into our custom classes . . .
-			GoogleJSONResponse Response = (GoogleJSONResponse) JSON.deserialize(GeoCodeResponse.getBody(), GoogleJSONResponse.class);
-			
-			// Now process the data in those custom classes . . . 
-			CurrentGeoCodeResult = ParseGeoCodeJSONReponse(CurrentGeoCodeResult, Response); 
-		
 		} else {
 			CurrentGeoCodeResult.Status = 'BLANK_ADDRESS';   			          
      	} // if (AddressRequestURL != '') {   
@@ -267,33 +292,27 @@ public with sharing class GoogleGeoCodeUpdater implements GeoCodeService{
      
     private static GeoCodeResult ParseGeoCodeJSONReponse(GeoCodeResult IncomingGeoCodeResult, GoogleJSONResponse R) {
           
-         GeoCodeResult ReturnGeoCodeResult = IncomingGeoCodeResult;
-          
-         system.debug('R Status = ' + R.Status);         
-                           
-  		 ReturnGeoCodeResult.Status = R.Status;
-  		 
-         if (ReturnGeoCodeResult.Status == 'OK') {
-         
-         		system.debug('Results.size = ' + R.Results.size());
-         	
-         		for (GoogleJSONResult Rec : R.Results) {
-					
-         			system.debug('Formatted Address = ' + Rec.Formatted_address);
-					// Since we are using filtered results, we will use the first entry we find
-					if (ReturnGeoCodeResult.Longitude == null || ReturnGeoCodeResult.Latitude == null) {
-						ReturnGeoCodeResult.Longitude = Double.valueOf(Rec.geometry.location.lng);
-						system.debug('Found Longitude: ' + ReturnGeoCodeResult.Longitude);									
-			 
-						ReturnGeoCodeResult.Latitude = Double.valueOf(Rec.geometry.location.lat);                          
-						system.debug('Found Latitude: ' + ReturnGeoCodeResult.Latitude);
-						break;
-					} // check for long / lat         																			
-         						         						         			
-         		} // loop thru results         	
+        GeoCodeResult ReturnGeoCodeResult = IncomingGeoCodeResult;
+                   
+ 		system.debug('Results.size = ' + R.Results.size());
+ 	
+ 		for (GoogleJSONResult Rec : R.Results) {			
+ 			system.debug('Formatted Address = ' + Rec.Formatted_address);
+			// Since we are using filtered results, we will use the first entry we find
+			if (ReturnGeoCodeResult.Longitude == null || ReturnGeoCodeResult.Latitude == null) {
+				ReturnGeoCodeResult.Longitude = Double.valueOf(Rec.geometry.location.lng);
+				system.debug('Found Longitude: ' + ReturnGeoCodeResult.Longitude);									
+	 
+				ReturnGeoCodeResult.Latitude = Double.valueOf(Rec.geometry.location.lat);                          
+				system.debug('Found Latitude: ' + ReturnGeoCodeResult.Latitude);
 				
-         } // Status = ok         
-         
+				ReturnGeoCodeResult.Quality = Rec.geometry.location_type;
+				
+				break;
+			} // check for long / lat         																			
+ 						         						         			
+ 		} // loop thru results         	
+		        
         return ReturnGeoCodeResult;
           
     } // GeoCodeResult

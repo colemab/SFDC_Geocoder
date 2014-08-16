@@ -150,6 +150,7 @@ public with sharing class MapQuestGeoCodeUpdater implements GeoCodeService{
     private static GeoCodeResult ParseGeoCodeJSONReponse(GeoCodeResult IncomingGeoCodeResult, MapQuestJSONResponse Response) {
  
         GeoCodeResult ReturnGeoCodeResult = IncomingGeoCodeResult;
+        ReturnGeoCodeResult.Engine = 'MapQuest';
           
         String StatusResult = '';
          
@@ -168,7 +169,8 @@ public with sharing class MapQuestGeoCodeUpdater implements GeoCodeService{
             			system.debug('Lng = ' + Response.results[0].locations[0].latLng.lng);
 						ReturnGeoCodeResult.Latitude = Double.valueOf(Response.results[0].locations[0].latLng.lat);                          	                                																										
 						ReturnGeoCodeResult.Longitude = Double.valueOf(Response.results[0].locations[0].latLng.lng);
-
+						ReturnGeoCodeResult.Quality = Response.results[0].locations[0].geocodeQuality;
+						
             		} // check for locations
         	} // check for results
 		} else {
